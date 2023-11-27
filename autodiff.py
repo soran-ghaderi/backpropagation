@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 
-class Value:
+class Variable:
     """ stores a single scalar value and its gradient """
 
     def __init__(self, data, _children=(), _op=''):
@@ -14,8 +14,8 @@ class Value:
         self._op = _op  # the op that produced this node, for graphviz / debugging / etc
 
     def __add__(self, other):
-        other = other if isinstance(other, Value) else Value(other)
-        out = Value(self.data + other.data, (self, other), '+')
+        other = other if isinstance(other, Variable) else Variable(other)
+        out = Variable(self.data + other.data, (self, other), '+')
 
         def _backward():
             self.grad += out.grad
@@ -26,8 +26,8 @@ class Value:
         return out
 
     def __mul__(self, other):
-        other = other if isinstance(other, Value) else Value(other)
-        out = Value(self.data * other.data, (self, other), '*')
+        other = other if isinstance(other, Variable) else Variable(other)
+        out = Variable(self.data * other.data, (self, other), '*')
 
         def _backward():
             self.grad += other.data * out.grad
@@ -39,7 +39,7 @@ class Value:
 
     def __pow__(self, other):
         assert isinstance(other, (int, float)), "only supporting int/float powers for now"
-        out = Value(self.data ** other, (self,), f'**{other}')
+        out = Variable(self.data ** other, (self,), f'**{other}')
 
         def _backward():
             self.grad += (other * self.data ** (other - 1)) * out.grad
@@ -50,7 +50,7 @@ class Value:
 
     def sigmoid(self):
         sig = 1 / (1 + np.exp(-self.data))
-        out = Value(sig, (self,), 'sigmoid')
+        out = Variable(sig, (self,), 'sigmoid')
         def _backward():
             self.grad += (sig * (1 - sig)) * out.grad
 
@@ -58,7 +58,7 @@ class Value:
         return out
 
     def relu(self):
-        out = Value(0 if self.data < 0 else self.data, (self,), 'ReLU')
+        out = Variable(0 if self.data < 0 else self.data, (self,), 'ReLU')
 
         def _backward():
             self.grad += (out.data > 0) * out.grad
@@ -112,8 +112,8 @@ class Value:
         return f"Value(data={self.data}, grad={self.grad})"
 
 
-a = Value(-4.0)
-b = Value(2.0)
+a = Variable(-4.0)
+b = Variable(2.0)
 c = a + b
 d = a * b + b ** 3
 c += c + 1
