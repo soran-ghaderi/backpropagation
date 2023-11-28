@@ -112,19 +112,49 @@ class Variable:
         return f"Value(data={self.data}, grad={self.grad})"
 
 
-a = Variable(-4.0)
-b = Variable(2.0)
-c = a + b
-d = a * b + b ** 3
-c += c + 1
-c += 1 + c + (-a)
-d += d * 2 + (b + a).relu()
-d += 3 * d + (b - a).relu()
-e = c - d
-f = e ** 2
-g = f / 2.0
-g += 10.0 / f
-# print(f'{g.data:.4f}')  # prints 24.7041, the outcome of this forward pass
-g.backward()
-# print(f'{a.grad:.4f}')  # prints 138.8338, i.e. the numerical value of dg/da
-# print(f'{b.grad:.4f}')  # prints 645.5773, i.e. the numerical value of dg/db
+from abc import ABC, abstractmethod
+class Optimizer(ABC):
+    @abstractmethod
+    def step(self, parameters, loss):
+        pass
+class Adam(Optimizer):
+    def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+        self.learning_rate = learning_rate
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+        self.momentums = []
+        self.velocities = []
+        self.t = 0
+
+    def step(self, parameters, loss):
+        self.t += 1
+
+        if not self.momentums:
+            self.momentums = [Variable(0) for _ in parameters]
+            self.velocities = [Variable(0) for _ in parameters]
+
+        loss.backward()
+
+        for p, m, v in zip(parameters, self.momentums, self.velocities):
+            m.data = self.beta1 * m.data + (1 - self.beta1) * p.grad
+            v.data = self.beta2 * v.data + (1 - self.beta2) * (p.grad ** 2)
+
+            m_hat = m.data / (1 - self.beta1 ** self.t)
+            v_hat = v.data / (1 - self.beta2 ** self.t)
+
+            update = -self.learning_rate * m_hat / (math.sqrt(v_hat) + self.epsilon)
+            p.data += update
+
+            p.grad = 0
+
+        # self.zero_grad()
+
+    def zero_grad(self):
+        pass
+
+class MeanSquaredError:
+    def __call__(self, y_true, y_pred):
+        # Implement mean squared error loss
+        loss = sum((true - pred) ** 2 for true, pred in zip(y_true, y_pred))
+        return loss
