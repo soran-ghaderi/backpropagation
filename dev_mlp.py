@@ -3,8 +3,9 @@ import random
 import numpy as np
 import csv
 
-from autodiff import Variable, Adam, Optimizer, DefaultOpt
-from loss import Loss, MeanSquaredError
+from autodiff import Variable
+from optimizer import Optimizer, Adam
+from loss import Loss, MeanSquaredError, RMSE
 
 
 # random.seed(1)
@@ -154,16 +155,6 @@ class Sequential(Model):
             x = layer(x)
         return x
 
-class RMSE(Loss):
-    def __init__(self, l2_lambda=0.0):
-        self.l2_lambda = l2_lambda
-    def __call__(self, y_true, y_pred):
-        # Implement mean squared error loss
-        y_true = np.array(y_true)
-        y_pred = np.array(y_pred)
-        loss = np.mean(np.square(y_true - y_pred)).sqrt()
-
-        return loss
 
 # ===============================================================================================
 
