@@ -12,7 +12,6 @@ class Model:
         self.best_loss = float('inf')
         self.early_stopping_counter = 0
 
-
     def compile(self, optimizer='adam', loss='mean_squared_error'):
         if optimizer=='adam':
             self.optimizer = Adam(learning_rate=0.01)

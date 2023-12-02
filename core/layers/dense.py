@@ -1,9 +1,10 @@
 import random
 
-from core.autodiff import Variable
+from core import Variable
+from core.layers.base import Layer
 
 
-class Neuron:
+class Neuron(Layer):
 
     def __init__(self, activation=None):
         # self.w = [Variable(random.uniform(-1, 1)) for _ in range(nin)]
@@ -28,7 +29,7 @@ class Neuron:
         return out
 
 
-class Dense:
+class Dense(Layer):
     def __init__(self, units, activation=None, **kwargs):
         self.neurons = [Neuron(activation, **kwargs) for _ in range(units)]
 
@@ -38,3 +39,5 @@ class Dense:
     def __call__(self, x, *args, **kwargs):
         out = [n(x) for n in self.neurons]
         return out[0] if len(out) == 1 else out
+
+
