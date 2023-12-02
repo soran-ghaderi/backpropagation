@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from autodiff import Variable
+from core.autodiff import Variable
 
 
 class Optimizer(ABC):
@@ -51,3 +51,15 @@ class Adam(Optimizer):
         pass
 
 
+class SimpleSGD(Optimizer):
+    def __init__(self, learning_rate):
+        self.learning_rate = learning_rate
+
+    def step(self, parameters, loss):
+
+        loss.backward()
+
+        for p in parameters:
+            # print('before: ', p)
+            p.data += -self.learning_rate * p.grad
+            p.grad = 0  # Zero out gradients after updating parameters

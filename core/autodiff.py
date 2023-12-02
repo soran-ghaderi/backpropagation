@@ -1,8 +1,5 @@
 import numpy as np
 
-from optimizer import Optimizer
-
-
 class Variable:
     """ stores a single scalar value and its gradient """
 
@@ -78,26 +75,6 @@ class Variable:
         out._backward = _backward
         return out
 
-    # def backward(self):
-    #
-    #     # topological order of all children in the graph
-    #     topo = []
-    #     visited = set()
-    #
-    #     def build_topo(v):
-    #         if v not in visited:
-    #             visited.add(v)
-    #             for child in v._prev:
-    #                 build_topo(child)
-    #             topo.append(v)
-    #
-    #     build_topo(self)
-    #
-    #     # go one variable at a time and apply the chain rule to get its gradient
-    #     self.grad = 1
-    #     for v in reversed(topo):
-    #         v._backward()
-
     def backward(self):
         # topological order of all children in the graph
         topo = []
@@ -156,19 +133,5 @@ class Variable:
     def __repr__(self):
         # return f"Variable(data={self.data}, grad={self.grad})"
         return f"{self.data}"
-
-
-class DefaultOpt(Optimizer):
-    def __init__(self, learning_rate):
-        self.learning_rate = learning_rate
-
-    def step(self, parameters, loss):
-
-        loss.backward()
-
-        for p in parameters:
-            # print('before: ', p)
-            p.data += -self.learning_rate * p.grad
-            p.grad = 0  # Zero out gradients after updating parameters
 
 
