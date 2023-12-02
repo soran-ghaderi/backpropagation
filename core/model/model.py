@@ -1,7 +1,9 @@
+import os
+
 import numpy as np
 
-from loss import MeanSquaredError, Loss
-from optimizer import Adam, Optimizer
+from core.losses.loss import MeanSquaredError, Loss
+from core.optimizers.optimizer import Adam, Optimizer
 
 
 class Model:
@@ -30,7 +32,6 @@ class Model:
 
     def fit(self, xs, ys, epochs=100, verbose=1, early_stopping=None, save_best_model=None):
         self.best_loss = float('inf')
-        print('self.best_loss: ', self.best_loss)
         for epoch in range(epochs):
             y_pred = self.predict(xs)
             loss = self.calculate_loss(ys, y_pred)
@@ -78,7 +79,7 @@ class Model:
 
     def param_init_dummy(self, x=[[0.2, 0.3]]):
         # call the model with a dummy input to initiate parameters
-        model.predict(x)
+        self.predict(x)
     def parameters(self):
         if not self.parameters_initialized:
             self.param_init_dummy()
@@ -88,6 +89,13 @@ class Model:
 
     def save_model(self, file_path='model_weights.npy'):
         model_weights = [param.data for param in self.parameters()]
+
+
+        # create directory if does not exist
+        directory = os.path.dirname(file_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         np.save(file_path, model_weights)
         print(f"Model weights saved to {file_path}")
 

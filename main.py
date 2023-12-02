@@ -1,75 +1,59 @@
-# This is a sample Python script.
+# from micrograd.engine import Value
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from core.layers import Dense
+from core.model import Sequential
+from core.optimizers import Adam
+from core.losses import RMSE
+from utils import DataLoader
 
-
-import numpy as np
-
-class Neuron:
-    def __init__(self, input_size):
-        self.weights = np.random.rand(input_size)
-        self.bias = np.random.rand()
-
-    def forward(self, inputs):
-        return np.dot(inputs, self.weights) + self.bias
-
-    def backward(self, inputs, gradient):
-        self.weights -= 0.01 * np.dot(gradient, inputs)
-        self.bias -= 0.01 * gradient
-        return gradient * self.weights
+# ===============================================================================================
 
 
-class Dense:
-    def __init__(self, input_size, output_size):
-        self.neurons = [Neuron(input_size) for _ in range(output_size)]
+data_loader = DataLoader()
+inputs_train, inputs_test, outputs_train, outputs_test = data_loader.load_data()
 
-    def forward(self, inputs):
-        return [neuron.forward(inputs) for neuron in self.neurons]
-
-    def backward(self, inputs, gradients):
-        return [neuron.backward(inputs, gradient) for neuron, gradient in zip(self.neurons, gradients)]
-
-
-class Network:
-    def __init__(self, layers):
-        self.layers = layers
-
-    def forward(self, inputs):
-        for layer in self.layers:
-            inputs = layer.forward(inputs)
-        return inputs
-
-    def backward(self, inputs, gradients):
-        for layer in reversed(self.layers):
-            gradients = layer.backward(inputs, gradients)
-        return gradients
+# Example usage:
+# inputs_train, inputs_test, outputs_train, outputs_test = load_data()
+print("Inputs Train Shape:", inputs_train.shape, inputs_train)
+print("Inputs Test Shape:", inputs_test.shape)
+print("Outputs Train Shape:", outputs_train.shape)
+print("Outputs Test Shape:", outputs_test.shape)
 
 
-# Example usage
-dense1 = Dense(2, 3)
-dense2 = Dense(3, 1)
-network = Network([dense1, dense2])
+# train the model:
+# ===============================================================================================
+activation_function = 'sigmoid'
+beta1 = 0.9
+beta2 = 0.999
+lr = 0.1
+clip_threshold = 1.0
 
-# Training example
-for _ in range(1000):
-    inputs = np.random.rand(2)
-    target = np.random.rand()
-    output = network.forward(inputs)
-    loss = (output[0] - target) ** 2
-    gradients = [2 * (output[0] - target)]
-    network.backward(inputs, gradients)
 
-# Testing
-test_input = np.array([0.5, 0.5])
-print(network.forward(test_input))
-# def print_hi(name):
-#     # Use a breakpoint in the code line below to debug your script.
-#     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-#
-#
-# # Press the green button in the gutter to run the script.
-# if __name__ == '__main__':
-#     print_hi('PyCharm')
+model = Sequential([
+    Dense(16, activation=activation_function),
+    Dense(8, activation=activation_function),
+    Dense(2)  # Output layer, no activation for regression
+])
+optimizer = Adam(learning_rate=lr, beta1=beta1, beta2=beta2, clip_threshold=clip_threshold)
+# optimizer = SimpleSGD(learning_rate=0.1)
+loss = RMSE()
+# loss = CustomMSE()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+model.compile(optimizer=optimizer, loss=loss)
+
+model.fit(xs=inputs_train, ys=outputs_train, epochs=60, verbose=1,
+          early_stopping={'min_delta': 0.001, 'patience': 5},
+          save_best_model='./weights/best_model_weights.npy')
+# pred = model.predict(inputs_test)
+evaluation_results = model.evaluate(inputs_test, outputs_test)
+evaluation_result_train = model.evaluate(inputs_train, outputs_train)
+print("Evaluation Results after training:", evaluation_results, evaluation_result_train)
+model.save_model('./weights/saved_model_weights.npy')
+
+print(model.predict([[0.9558049704289108,0.6555049379905104]]))
+model.load_model('./weights/saved_model_weights.npy')
+print(model.predict([[0.9558049704289108,0.6555049379905104]]))
+evaluation_results = model.evaluate(inputs_test, outputs_test)
+print("Evaluation Results after loading best weights:", evaluation_results)
+# 0.11828954778867262,0.5061178701108225
+
