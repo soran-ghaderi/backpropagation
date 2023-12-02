@@ -67,20 +67,51 @@ class Variable:
 
         return out
 
-    def backward(self):
+    def sqrt(self):
+        sqrt_val = np.sqrt(self.data)
+        out = Variable(sqrt_val, (self,), 'sqrt')
 
+        def _backward():
+            self.grad += 0.5 * (1 / sqrt_val) * out.grad
+
+        out._backward = _backward
+        return out
+
+    # def backward(self):
+    #
+    #     # topological order of all children in the graph
+    #     topo = []
+    #     visited = set()
+    #
+    #     def build_topo(v):
+    #         if v not in visited:
+    #             visited.add(v)
+    #             for child in v._prev:
+    #                 build_topo(child)
+    #             topo.append(v)
+    #
+    #     build_topo(self)
+    #
+    #     # go one variable at a time and apply the chain rule to get its gradient
+    #     self.grad = 1
+    #     for v in reversed(topo):
+    #         v._backward()
+
+    def backward(self):
         # topological order of all children in the graph
         topo = []
         visited = set()
+        stack = [self]
 
-        def build_topo(v):
-            if v not in visited:
-                visited.add(v)
-                for child in v._prev:
-                    build_topo(child)
-                topo.append(v)
+        while stack:
+            current = stack[-1]
 
-        build_topo(self)
+            if current not in visited:
+                visited.add(current)
+                for child in current._prev:
+                    stack.append(child)
+            else:
+                topo.append(stack.pop())
 
         # go one variable at a time and apply the chain rule to get its gradient
         self.grad = 1
@@ -103,13 +134,29 @@ class Variable:
         return self * other
 
     def __truediv__(self, other):  # self / other
-        return self * other ** -1
+        if other == 0:
+            raise ZeroDivisionError("Division by zero is not allowed")
+        try:
+            res = self * float(other) ** -1
+        except Exception as e:
+            print(other, e)
+        return res
 
     def __rtruediv__(self, other):  # other / self
-        return other * self ** -1
+        if self == 0:
+            raise ZeroDivisionError("Division by zero is not allowed")
+        try:
+            res = other * self ** -1
+        except Exception as e:
+            print(self, e)
+
+        return res
 
     def __repr__(self):
-        return f"Value(data={self.data}, grad={self.grad})"
+        # return f"Variable(data={self.data}, grad={self.grad})"
+        return f"{self.data}"
+
+
 
 
 from abc import ABC, abstractmethod
@@ -118,7 +165,7 @@ class Optimizer(ABC):
     def step(self, parameters, loss):
         pass
 class Adam(Optimizer):
-    def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, clip_threshold=1.0):
         self.learning_rate = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
@@ -126,6 +173,7 @@ class Adam(Optimizer):
         self.momentums = []
         self.velocities = []
         self.t = 0
+        self.clip_threshold = clip_threshold
 
     def step(self, parameters, loss):
         self.t += 1
@@ -135,8 +183,9 @@ class Adam(Optimizer):
             self.velocities = [Variable(0) for _ in parameters]
 
         loss.backward()
-
         for p, m, v in zip(parameters, self.momentums, self.velocities):
+            p.grad = np.clip(p.grad, -self.clip_threshold, self.clip_threshold)
+
             m.data = self.beta1 * m.data + (1 - self.beta1) * p.grad
             v.data = self.beta2 * v.data + (1 - self.beta2) * (p.grad ** 2)
 
@@ -153,8 +202,17 @@ class Adam(Optimizer):
     def zero_grad(self):
         pass
 
-class MeanSquaredError:
-    def __call__(self, y_true, y_pred):
-        # Implement mean squared error loss
-        loss = sum((true - pred) ** 2 for true, pred in zip(y_true, y_pred))
-        return loss
+class DefaultOpt(Optimizer):
+    def __init__(self, learning_rate):
+        self.learning_rate = learning_rate
+
+    def step(self, parameters, loss):
+
+        loss.backward()
+
+        for p in parameters:
+            # print('before: ', p)
+            p.data += -self.learning_rate * p.grad
+            p.grad = 0  # Zero out gradients after updating parameters
+
+
