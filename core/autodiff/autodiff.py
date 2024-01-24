@@ -1,5 +1,4 @@
 import numpy as np
-
 class Variable:
     """ stores a single scalar value and its gradient """
 

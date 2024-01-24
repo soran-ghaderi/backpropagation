@@ -12,6 +12,7 @@ class Neuron(Layer):
         self.b = Variable(random.uniform(-1, 1))
         self.activation_function = activation
         # self.nonlin = use_activation
+
     def parameters(self):
         return self.w + [self.b]
 
@@ -20,10 +21,10 @@ class Neuron(Layer):
             self.w = [Variable(random.uniform(-1, 1)) for _ in
                       range(len(x))]  # infers the inp_no in the runtime instead of asking explicitly
         out = sum((wi * xi for wi, xi in zip(self.w, x)), start=self.b)
-        if not self.activation_function==None:
+        if not self.activation_function == None:
             if self.activation_function == 'relu':
                 out = out.relu()
-            elif self.activation_function=='sigmoid':
+            elif self.activation_function == 'sigmoid':
                 out = out.sigmoid()
 
         return out
@@ -39,5 +40,3 @@ class Dense(Layer):
     def __call__(self, x, *args, **kwargs):
         out = [n(x) for n in self.neurons]
         return out[0] if len(out) == 1 else out
-
-

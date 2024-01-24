@@ -11,10 +11,22 @@ class DataLoader:
         self.random_state = random_state
         self.df = None  # Placeholder for the DataFrame
 
-    def load_data(self):
-        # Read the CSV file using pandas
-        self.df = pd.read_csv(self.file_path)
+    # def load_data(self):
+    #     # Read the CSV file using pandas
+    #     print('file path: ', self.file_path)
+    #     self.df = pd.read_csv(self.file_path)
 
+    def load_data(self, portion=None):
+        # Read the CSV file using pandas
+        print('file path: ', self.file_path)
+        if portion is not None:
+            # Read only a portion of the data
+            self.df = pd.read_csv(self.file_path, nrows=portion)
+        else:
+            self.df = pd.read_csv(self.file_path)
+
+
+    def split_data(self):
         # Separate features (inputs) and labels (outputs)
         inputs = self.df.iloc[:, :2].values
         outputs = self.df.iloc[:, 2:].values
@@ -27,7 +39,7 @@ class DataLoader:
             inputs, outputs, test_size=self.test_size, random_state=self.random_state
         )
 
-        if not self.validation_size == None:
+        if self.validation_size is not None:
             # Split the training set into training and validation sets
             inputs_train, inputs_val, outputs_train, outputs_val = train_test_split(
                 inputs_train, outputs_train, test_size=self.validation_size, random_state=self.random_state
@@ -36,3 +48,4 @@ class DataLoader:
             return inputs_train, inputs_val, inputs_test, outputs_train, outputs_val, outputs_test
 
         return inputs_train, inputs_test, outputs_train, outputs_test
+

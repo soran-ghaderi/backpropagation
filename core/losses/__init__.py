@@ -1,1 +1,1 @@
-from .loss import MeanSquaredError, RMSE
+from .loss import MeanSquaredError, RMSE, SimpleError
